@@ -1,0 +1,9 @@
+node_modules/
+.env
+.claude
+*.log
+npm-debug.log*
+dist/
+CLAUDE.md
+.DS_Store
+config/secrets.json
