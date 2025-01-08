@@ -7,6 +7,9 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static('public'));
 
+const accountsRouter = require('./routes/accounts');
+app.use('/api/accounts', accountsRouter);
+
 app.get('/', (req, res) => {
     res.send('Social Media Bot - Coming Soon!');
 });
