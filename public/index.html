@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Media Bot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .posts-list {
+            margin-top: 20px;
+        }
+        .post-item {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Social Media Bot Dashboard</h1>
+        <p>Manage your social media accounts and schedule posts</p>
+    </div>
+
+    <div class="card">
+        <h2>Add New Account</h2>
+        <form id="accountForm">
+            <div class="form-group">
+                <label for="platform">Platform:</label>
+                <select id="platform" name="platform" required>
+                    <option value="">Select Platform</option>
+                    <option value="twitter">Twitter</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="facebook">Facebook</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="token">API Token:</label>
+                <input type="password" id="token" name="token" placeholder="Leave empty for now">
+            </div>
+            <button type="submit">Add Account</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Create New Post</h2>
+        <form id="postForm">
+            <div class="form-group">
+                <label for="account_id">Account:</label>
+                <select id="account_id" name="account_id" required>
+                    <option value="">Select Account</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="content">Content:</label>
+                <textarea id="content" name="content" rows="4" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="scheduled_time">Schedule Time (optional):</label>
+                <input type="datetime-local" id="scheduled_time" name="scheduled_time">
+            </div>
+            <button type="submit">Create Post</button>
+        </form>
+    </div>
+
+    <div id="accountsList" class="card">
+        <h2>Accounts</h2>
+        <div id="accounts"></div>
+    </div>
+
+    <div id="postsList" class="card">
+        <h2>Posts</h2>
+        <div id="posts"></div>
+    </div>
+
+    <script>
+        // Load accounts and posts on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAccounts();
+            loadPosts();
+        });
+
+        // Handle account form submission
+        document.getElementById('accountForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/api/accounts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+                
+                if (response.ok) {
+                    alert('Account added successfully!');
+                    e.target.reset();
+                    loadAccounts();
+                }
+            } catch (error) {
+                alert('Error adding account');
+            }
+        });
+
+        // Handle post form submission
+        document.getElementById('postForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/api/posts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+                
+                if (response.ok) {
+                    alert('Post created successfully!');
+                    e.target.reset();
+                    loadPosts();
+                }
+            } catch (error) {
+                alert('Error creating post');
+            }
+        });
+
+        // Load accounts
+        async function loadAccounts() {
+            try {
+                const response = await fetch('/api/accounts');
+                const accounts = await response.json();
+                
+                const accountsDiv = document.getElementById('accounts');
+                const accountSelect = document.getElementById('account_id');
+                
+                accountsDiv.innerHTML = '';
+                accountSelect.innerHTML = '<option value="">Select Account</option>';
+                
+                accounts.forEach(account => {
+                    accountsDiv.innerHTML += `
+                        <div class="post-item">
+                            <strong>${account.platform}</strong> - @${account.username}
+                        </div>
+                    `;
+                    
+                    accountSelect.innerHTML += `
+                        <option value="${account.id}">${account.platform} - @${account.username}</option>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error loading accounts:', error);
+            }
+        }
+
+        // Load posts
+        async function loadPosts() {
+            try {
+                const response = await fetch('/api/posts');
+                const posts = await response.json();
+                
+                const postsDiv = document.getElementById('posts');
+                postsDiv.innerHTML = '';
+                
+                posts.forEach(post => {
+                    postsDiv.innerHTML += `
+                        <div class="post-item">
+                            <strong>${post.platform} - @${post.username}</strong><br>
+                            <p>${post.content}</p>
+                            <small>Status: ${post.status} | Created: ${new Date(post.created_at).toLocaleDateString()}</small>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error loading posts:', error);
+            }
+        }
+    </script>
+</body>
+</html>

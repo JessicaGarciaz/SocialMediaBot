@@ -8,10 +8,13 @@ app.use(express.json());
 app.use(express.static('public'));
 
 const accountsRouter = require('./routes/accounts');
+const postsRouter = require('./routes/posts');
+
 app.use('/api/accounts', accountsRouter);
+app.use('/api/posts', postsRouter);
 
 app.get('/', (req, res) => {
-    res.send('Social Media Bot - Coming Soon!');
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, () => {
