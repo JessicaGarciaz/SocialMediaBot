@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Post = require('../models/Post');
+const { validatePost } = require('../middleware/validation');
+const { postCreationLimiter } = require('../middleware/rateLimiter');
 
 router.get('/', async (req, res) => {
     try {
@@ -11,17 +13,13 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', postCreationLimiter, validatePost, async (req, res, next) => {
     try {
         const { account_id, content, scheduled_time } = req.body;
-        if (!account_id || !content) {
-            return res.status(400).json({ error: 'Account ID and content are required' });
-        }
-        
         const post = await Post.create(account_id, content, scheduled_time);
         res.status(201).json(post);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to create post' });
+        next(error);
     }
 });
 

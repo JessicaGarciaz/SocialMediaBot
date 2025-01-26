@@ -1,12 +1,18 @@
 const express = require('express');
 const path = require('path');
+const config = require('./config/config');
 const scheduler = require('./services/scheduler');
+const { errorHandler, notFound } = require('./middleware/errorHandler');
+const { apiLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = config.port;
 
 app.use(express.json());
 app.use(express.static('public'));
+
+// Apply rate limiting to all API routes
+app.use('/api/', apiLimiter);
 
 const accountsRouter = require('./routes/accounts');
 const postsRouter = require('./routes/posts');
@@ -31,6 +37,10 @@ app.post('/api/scheduler/stop', (req, res) => {
     scheduler.stop();
     res.json({ message: 'Scheduler stopped' });
 });
+
+// Error handling middleware (must be last)
+app.use(notFound);
+app.use(errorHandler);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

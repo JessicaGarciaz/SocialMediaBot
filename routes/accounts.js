@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Account = require('../models/Account');
+const { validateAccount } = require('../middleware/validation');
+const { accountCreationLimiter } = require('../middleware/rateLimiter');
 
 router.get('/', async (req, res) => {
     try {
@@ -11,13 +13,13 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', accountCreationLimiter, validateAccount, async (req, res, next) => {
     try {
         const { platform, username, token } = req.body;
         const account = await Account.create(platform, username, token);
         res.status(201).json(account);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to create account' });
+        next(error);
     }
 });
 
