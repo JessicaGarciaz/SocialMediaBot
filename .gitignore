@@ -7,3 +7,5 @@ dist/
 CLAUDE.md
 .DS_Store
 config/secrets.json
+logs/
+database/*.db

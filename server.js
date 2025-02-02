@@ -2,6 +2,8 @@ const express = require('express');
 const path = require('path');
 const config = require('./config/config');
 const scheduler = require('./services/scheduler');
+const logger = require('./utils/logger');
+const requestLogger = require('./middleware/requestLogger');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 const { apiLimiter } = require('./middleware/rateLimiter');
 
@@ -10,6 +12,9 @@ const PORT = config.port;
 
 app.use(express.json());
 app.use(express.static('public'));
+
+// Request logging middleware
+app.use(requestLogger);
 
 // Apply rate limiting to all API routes
 app.use('/api/', apiLimiter);
@@ -43,7 +48,8 @@ app.use(notFound);
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    logger.info(`Server running on port ${PORT}`);
+    logger.info(`Environment: ${config.nodeEnv}`);
     
     // Start scheduler automatically
     scheduler.start();

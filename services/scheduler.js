@@ -1,19 +1,23 @@
 const cron = require('node-cron');
 const Post = require('../models/Post');
 const db = require('../database/db');
+const logger = require('../utils/logger');
+const config = require('../config/config');
+const SocialMediaFactory = require('../integrations/socialMediaFactory');
 
 class Scheduler {
     constructor() {
         this.isRunning = false;
+        this.socialMediaFactory = new SocialMediaFactory(config);
     }
 
     start() {
         if (this.isRunning) {
-            console.log('Scheduler is already running');
+            logger.warn('Scheduler is already running');
             return;
         }
 
-        console.log('Starting post scheduler...');
+        logger.info('Starting post scheduler...');
         this.isRunning = true;
 
         // Check for scheduled posts every minute
@@ -24,7 +28,7 @@ class Scheduler {
         });
 
         this.task.start();
-        console.log('Post scheduler started successfully');
+        logger.info('Post scheduler started successfully');
     }
 
     stop() {
@@ -65,37 +69,25 @@ class Scheduler {
 
     async processPost(post) {
         try {
-            // Simulate posting to social media platform
-            console.log(`Processing post ${post.id} for ${post.platform} - @${post.username}`);
-            console.log(`Content: ${post.content}`);
+            logger.info(`Processing post ${post.id} for ${post.platform} - @${post.username}`);
+            logger.debug(`Content: ${post.content.substring(0, 100)}...`);
             
-            // For now, just mark as posted
-            // In a real implementation, here you would:
-            // 1. Make API calls to the respective social media platforms
-            // 2. Handle authentication and tokens
-            // 3. Deal with rate limits and errors
+            const account = {
+                platform: post.platform,
+                username: post.username,
+                token: post.token
+            };
             
-            const success = await this.simulatePost(post);
+            // Use social media factory to post
+            const result = await this.socialMediaFactory.postToSocialMedia(account, post.content);
             
-            if (success) {
-                await Post.updateStatus(post.id, 'posted', new Date().toISOString());
-                console.log(`Successfully posted to ${post.platform}`);
-            } else {
-                await Post.updateStatus(post.id, 'failed');
-                console.log(`Failed to post to ${post.platform}`);
-            }
+            await Post.updateStatus(post.id, 'posted', new Date().toISOString());
+            logger.info(`Successfully posted to ${post.platform} @${post.username}`);
+            
         } catch (error) {
-            console.error(`Error processing post ${post.id}:`, error);
+            logger.error(`Error processing post ${post.id}`, error);
             await Post.updateStatus(post.id, 'failed');
         }
-    }
-
-    async simulatePost(post) {
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Simulate 90% success rate
-        return Math.random() > 0.1;
     }
 
     getStatus() {
